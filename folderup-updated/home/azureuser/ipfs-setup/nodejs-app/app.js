@@ -228,12 +228,13 @@ app.get('/download/:cid', async (req, res) => {
 
   for (const gateway of IPFS_GATEWAYS) {
     try {
-      const url = `${gateway}/${cid}`;
+      const url = `${gateway}/${cid}/`; // 👈 add slash to handle folder
+
       const response = await fetch(url);
       const contentType = response.headers.get('content-type');
 
-      if (response.ok && contentType && contentType !== 'text/html') {
-        res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      if (response.ok && contentType && !contentType.includes('text/html')) {
+        res.setHeader('Content-Disposition', `attachment; filename="${filename}.zip"`);
         response.body.pipe(res);
         return;
       } else {

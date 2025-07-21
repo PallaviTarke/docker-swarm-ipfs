@@ -12,7 +12,6 @@ const FileUploader = () => {
   const [uploadSpeed, setUploadSpeed] = useState(null);
   const [timeLeft, setTimeLeft] = useState(null);
   const [files, setFiles] = useState([]);
-console.log(filesToUpload)
   const uploadStartTimeRef = useRef(null);
   const cancelTokenRef = useRef(null);
 
@@ -30,16 +29,15 @@ console.log(filesToUpload)
       formData.append('file', file, file.webkitRelativePath);
     });
 
-    
     setUploading(true);
     setProgress(0);
     uploadStartTimeRef.current = Date.now();
 
     const cancelSource = axios.CancelToken.source();
     cancelTokenRef.current = cancelSource;
-console.log(formData)
+
     try {
-      const res = await axios.post(`${BACKEND_URL}/upload-folder`, formData,  {
+      const res = await axios.post(`${BACKEND_URL}/upload-folder`, formData, {
         cancelToken: cancelSource.token,
         headers: { 'Content-Type': 'multipart/form-data' },
         onUploadProgress: (event) => {
@@ -58,14 +56,24 @@ console.log(formData)
         }
       });
 
-      toast.success('✅ Folder uploaded successfully!');
+      const uploadedCid = res.data?.cid;
+      const folderName = res.data?.folderName || "Folder";
+
+      if (uploadedCid) {
+        toast.success(`✅ Uploaded! CID: ${uploadedCid}`);
+        setFiles([{ filename: folderName, cid: uploadedCid }, ...files]);
+      } else {
+        toast.warn("⚠️ Upload succeeded but CID not returned.");
+      }
+
       setFilesToUpload([]);
-      fetchFiles();
+      fetchFiles(); // refresh file list from backend
+
     } catch (err) {
       if (axios.isCancel(err)) {
         toast.info('Upload canceled');
       } else {
-        toast.error('❌ Folder upload failed');
+        toast.error('❌ Upload failed');
       }
     } finally {
       setUploading(false);
@@ -163,15 +171,24 @@ console.log(formData)
 
       <h3 style={{ marginTop: '2rem' }}>📦 Uploaded Files</h3>
       <ul>
-        {/* {files.length === 0 ? (
+        {files.length === 0 ? (
           <li>No files uploaded yet.</li>
         ) : (
           files.map((f, idx) => (
             <li key={idx}>
               <strong>{f.filename}</strong> — CID: <code>{f.cid}</code>
+              &nbsp;&nbsp;
+              <a
+                href={`${BACKEND_URL}/download/${f.cid}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ color: 'blue' }}
+              >
+                ⬇️ Download
+              </a>
             </li>
           ))
-        )} */}
+        )}
       </ul>
     </div>
   );

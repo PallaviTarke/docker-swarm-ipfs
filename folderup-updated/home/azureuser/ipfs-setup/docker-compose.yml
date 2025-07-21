@@ -413,4 +413,3 @@ volumes:
   redis-replica2-data:
   nodejs-uploads:
   grafana-data:
-
